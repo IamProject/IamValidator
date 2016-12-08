@@ -1,0 +1,30 @@
+{
+  "name": "iamvalidator",
+  "version": "0.1.0",
+  "description": "JS object validator",
+  "main": "lib/index.js",
+  "author": "IamProject Node.js team",
+  "scripts": {
+    "test": "./node_modules/.bin/mocha ./test/**.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/IamProject/IamValidator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/IamProject/IamValidator/issues"
+  },
+  "dependencies": {
+    "mocha": "^3.2.0",
+    "type-of-is": "^3.4.0",
+    "underscore": "^1.8.3"
+  },
+  "homepage": "https://github.com/IamProject/IamValidator",
+  "license": "MIT",
+  "keywords": [
+    "validation"
+  ],
+  "engines": {
+    "node": ">= 6.0"
+  }
+}
