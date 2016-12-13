@@ -1,9 +1,9 @@
 const _ = require('underscore');
 const assert = require('assert');
 
-const IamValidatorError = require('../lib/iamvalidator-error');
 const Validator = require('../lib');
-const CODES = Validator.CODES;
+const IamValidatorError = Validator.IamValidatorError;
+const CODES = IamValidatorError.CODES;
 
 function itOk(template, source, expectedResult, options) {
   let validator = new Validator(template);
@@ -80,7 +80,7 @@ describe('validator', () => {
         }
       }
     }, {}, {}, {
-      ignoreMissing: true //TODO: output it?
+      ignoreMissing: true
     });
     //3.3. Default
     itOk({
@@ -191,7 +191,7 @@ describe('validator', () => {
       field: 2
     }, 'INVALID_NUMBER_RANGE', {
       path: '_root.field',
-      data: 2
+      src: 2
     });
     //7.2.1. Max - OK
     itOk({
@@ -220,7 +220,7 @@ describe('validator', () => {
       field: 4
     }, 'INVALID_NUMBER_RANGE', {
       path: '_root.field',
-      data: 4
+      src: 4
     });
 
     //8. String length
@@ -337,7 +337,7 @@ describe('validator', () => {
       fruit: 'carrot'
     }, 'NOT_IN_VALUES', {
       path: '_root.fruit',
-      data: 'carrot'
+      src: 'carrot'
     });
 
     //10. Arrays
@@ -441,7 +441,7 @@ describe('validator', () => {
       field: 'invalid md5 hash'
     }, 'INVALID_STRING', {
       path: '_root.field',
-      data: 'invalid md5 hash'
+      src: 'invalid md5 hash'
     });
 
     //12. Custom validation
@@ -452,7 +452,7 @@ describe('validator', () => {
         if (data % 2 !== 0) {
           throw new IamValidatorError(CODES.INVALID_CUSTOM_VALIDATE, {
             path: path,
-            data: data
+            src: data
           })
         }
       }
@@ -464,13 +464,13 @@ describe('validator', () => {
         if (data % 2 !== 0) {
           throw new IamValidatorError(CODES.INVALID_CUSTOM_VALIDATE, {
             path: path,
-            data: data
+            src: data
           })
         }
       }
     }, 1, 'INVALID_CUSTOM_VALIDATE', {
       path: '_root',
-      data: 1
+      src: 1
     });
 
     //13. Transform after validation
