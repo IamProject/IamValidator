@@ -55,7 +55,6 @@ function itFail(template, source, code, extraData) {
     assert.throws(() => {
       validator.validate(source);
     }, (err) => {
-      console.log(err);
       if (!(err instanceof IamValidatorError)) {
         return false;
       }
