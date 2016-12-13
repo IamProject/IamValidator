@@ -1,9 +1,41 @@
 const _ = require('underscore');
 const assert = require('assert');
+const Type = require('type-of-is');
 
 const Validator = require('../lib');
 const IamValidatorError = Validator.IamValidatorError;
 const CODES = IamValidatorError.CODES;
+
+
+class Rational {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  get X() {
+    return this.x;
+  }
+
+  get Y() {
+    return this.y;
+  }
+}
+
+
+function validateRational(TEMPLATE, data, path, options) {
+  let isValid = (typeof data.X === 'number');
+  isValid &= (typeof data.Y === 'number');
+  isValid &= (TEMPLATE.isZeroValid || (data.Y !== 0));
+
+  if(!isValid) {
+    throw new IamValidatorError('RATIONAL_INCORRECT', {
+      path: path,
+      src: data
+    })
+  }
+  return data;
+}
+
 
 function itOk(template, source, expectedResult, options) {
   let validator = new Validator(template);
@@ -23,6 +55,7 @@ function itFail(template, source, code, extraData) {
     assert.throws(() => {
       validator.validate(source);
     }, (err) => {
+      console.log(err);
       if (!(err instanceof IamValidatorError)) {
         return false;
       }
@@ -480,5 +513,26 @@ describe('validator', () => {
         return data.toString()
       }
     }, 0, '0');
+
+    //14. Custom type validation
+    let r1 = new Rational(1, 2);
+    let r2 = new Rational(1, 0);
+    Validator.registerValidator(Type.string(r1).toLowerCase(), validateRational);
+    //14.1. OK
+    itOk({
+      type: 'rational'
+    }, r1, r1);
+    //14.2. Fail
+    itFail({
+      type: 'rational'
+    }, r2, 'RATIONAL_INCORRECT', {
+      path: '_root',
+      src: r2
+    });
+    //14.1. isZeroValid
+    itOk({
+      type: 'rational',
+      isZeroValid: true
+    }, r2, r2);
   });
 });
