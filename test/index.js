@@ -37,21 +37,16 @@ function validateRational(TEMPLATE, data, path, options) {
 }
 
 
-function itOk(template, source, expectedResult, options) {
+function itOk(title, template, source, expectedResult, options) {
   let validator = new Validator(template);
-  it(`${JSON.stringify(template)} on ${JSON.stringify(source)} with options ${JSON.stringify(options)}`
-    + ` should return ${JSON.stringify(expectedResult)}`, () => {
+  it(title, () => {
     assert(_.isEqual(expectedResult, validator.validate(source, options)));
   });
 }
 
-function itFail(template, source, code, extraData) {
+function itFail(title, template, source, code, extraData) {
   let validator = new Validator(template);
-  let description = `${JSON.stringify(template)} on ${JSON.stringify(source)} should fail with "${code}"`;
-  if (extraData) {
-    description += ` and extraData ${JSON.stringify(extraData)}`;
-  }
-  it(description, () => {
+  it(title, () => {
     assert.throws(() => {
       validator.validate(source);
     }, (err) => {
@@ -70,15 +65,12 @@ function itFail(template, source, code, extraData) {
 }
 
 describe('validator', () => {
-  describe('#validate', () => {
-    //1. Empty
-    itOk({
+  describe('1. Basic', () => {
+    itOk('1.1. Returns empty object on empty template', {
       type: 'object',
       fields: {}
     }, {}, {});
-
-    //2. Number
-    itOk({
+    itOk('1.2. Returns the number on number template', {
       type: 'object',
       fields: {
         field: {
@@ -90,69 +82,31 @@ describe('validator', () => {
     }, {
       field: 1
     });
-
-    //3. Missing handle
-    //3.1. Fail
-    itFail({
+    itOk('1.3. Returns the boolean on boolean template', {
       type: 'object',
       fields: {
-        missingField: {
-          type: 'number'
+        field: {
+          type: 'boolean'
         }
       }
-    }, {}, 'MISSING_FIELD', {
-      path: '_root.missingField'
+    }, {
+      field: true
+    }, {
+      field: true
     });
-    //3.2. Ignore
-    itOk({
+    itOk('1.4. Returns the date on date template', {
       type: 'object',
       fields: {
-        missingField: {
-          type: 'number'
+        field: {
+          type: 'date'
         }
       }
-    }, {}, {}, {
-      ignoreMissing: true
+    }, {
+      field: new Date(2017,1,1)
+    }, {
+      field: new Date(2017,1,1)
     });
-    //3.3. Default
-    itOk({
-      type: 'object',
-      fields: {
-        missingField: {
-          type: 'number',
-          default: 1,
-          missing: "default"
-        }
-      }
-    }, {}, {
-      missingField: 1
-    }, {});
-
-    //4. Handling extra fields
-    //4.1. Fail
-    itFail({
-      type: 'object',
-      fields: {}
-    }, {
-      extraField: 1
-    }, 'EXTRA_FIELDS', {
-      path: '_root',
-      fields: ['extraField']
-    });
-    //4.2. Ignore
-    itOk({
-      type: 'object',
-      fields: {}
-    }, {
-      extraField: 1
-    }, {
-      extraField: 1
-    }, {
-      ignoreExtra: true
-    });
-
-    //5. Handling type mismatch
-    itFail({
+    itFail('1.5. Throws "TYPE_MISMATCH" when field type isn\'t equal to expected type', {
       type: 'object',
       fields: {
         field: {
@@ -166,38 +120,78 @@ describe('validator', () => {
       type: 'string',
       expectedType: 'number'
     });
+  });
 
-    //6. Primitives and builtin types
-    //6.1. Boolean
-    itOk({
+  describe('2. Missing fields', () => {
+    itFail('2.1. Throws "MISSING_FIELD" when required field is missing', {
       type: 'object',
       fields: {
-        field: {
-          type: 'boolean'
+        missingField: {
+          type: 'number'
         }
       }
-    }, {
-      field: true
-    }, {
-      field: true
+    }, {}, 'MISSING_FIELD', {
+      path: '_root.missingField'
     });
-    //6.2. Date
-    itOk({
+    itOk('2.2. Returns empty object when required field is missing (global option "ignoreMissing")', {
       type: 'object',
       fields: {
-        field: {
-          type: 'date'
+        missingField: {
+          type: 'number'
         }
       }
-    }, {
-      field: new Date(2017,1,1)
-    }, {
-      field: new Date(2017,1,1)
+    }, {}, {}, {
+      ignoreMissing: true
     });
+    itOk('2.3. Returns empty object when required field is missing (option { \'missing\': \'ignore\' })', {
+      type: 'object',
+      fields: {
+        missingField: {
+          type: 'number',
+          missing: 'ignore'
+        }
+      }
+    }, {}, {}, {
+      ignoreMissing: true
+    });
+    itOk('2.4. Returns default value when required field is missing (options { \'missing\': \'default\' } and "default")', {
+      type: 'object',
+      fields: {
+        missingField: {
+          type: 'number',
+          default: 1,
+          missing: "default"
+        }
+      }
+    }, {}, {
+      missingField: 1
+    }, {});
+  });
 
-    //7. Number ranges
-    //7.1.1. Min - OK
-    itOk({
+  describe('3. Extra fields', () => {
+    itFail('3.1. Throws on fields not described in template', {
+      type: 'object',
+      fields: {}
+    }, {
+      extraField: 1
+    }, 'EXTRA_FIELDS', {
+      path: '_root',
+      fields: ['extraField']
+    });
+    itOk('3.2. Returns the fields not described in template (global option "ignoreExtra")', {
+      type: 'object',
+      fields: {}
+    }, {
+      extraField: 1
+    }, {
+      extraField: 1
+    }, {
+      ignoreExtra: true
+    });
+  });
+
+  describe('4. Number ranges', () => {
+    itOk('4.1.1. Returns the number when it satisfies \'min\' option', {
       type: 'object',
       fields: {
         field: {
@@ -210,8 +204,7 @@ describe('validator', () => {
     }, {
       field: 3
     });
-    //7.1.2. Min - Fail
-    itFail({
+    itFail('4.1.2. Throws "INVALID_NUMBER_RANGE" when number less than \'min\' option', {
       type: 'object',
       fields: {
         field: {
@@ -225,8 +218,7 @@ describe('validator', () => {
       path: '_root.field',
       src: 2
     });
-    //7.2.1. Max - OK
-    itOk({
+    itOk('4.2.1. Returns the number when it satisfies \'max\' option', {
       type: 'object',
       fields: {
         field: {
@@ -239,8 +231,7 @@ describe('validator', () => {
     }, {
       field: 3
     });
-    //7.1.2. Max - Fail
-    itFail({
+    itFail('4.2.2. Throws "INVALID_NUMBER_RANGE" when number more than \'max\' option', {
       type: 'object',
       fields: {
         field: {
@@ -254,10 +245,10 @@ describe('validator', () => {
       path: '_root.field',
       src: 4
     });
+  });
 
-    //8. String length
-    //8.1.1. Length - OK
-    itOk({
+  describe('5. Strings', () => {
+    itOk('5.1.1. Returns the string when its length is equal to \'length\' option', {
       type: 'object',
       fields: {
         field: {
@@ -270,8 +261,7 @@ describe('validator', () => {
     }, {
       field: '123'
     });
-    //8.1.2. Length - Fail
-    itFail({
+    itFail('5.1.2. Throws "INVALID_LENGTH" when string length isn\'t equal to \'length\' option', {
       type: 'object',
       fields: {
         field: {
@@ -287,8 +277,7 @@ describe('validator', () => {
       length: 4,
       expectedLength: 3
     });
-    //8.2.1. Min and max length - OK
-    itOk({
+    itOk('5.2.1. Returns the string when its length satisfies to \'min\'-\'max\' range', {
       type: 'object',
       fields: {
         field: {
@@ -302,8 +291,7 @@ describe('validator', () => {
     }, {
       field: '1234'
     });
-    //8.2.2. Min and max length - less than min fail
-    itFail({
+    itFail('5.2.2. Throws "INVALID_LENGTH" when string length less than \'min\' option', {
       type: 'object',
       fields: {
         field: {
@@ -321,8 +309,7 @@ describe('validator', () => {
       expectedMin: 3,
       expectedMax: 5
     });
-    //8.2.3. Min and max length - more than max fail
-    itFail({
+    itFail('5.2.2. Throws "INVALID_LENGTH" when string length more than \'max\' option', {
       type: 'object',
       fields: {
         field: {
@@ -341,9 +328,37 @@ describe('validator', () => {
       expectedMax: 5
     });
 
-    //9. Limited set of values
-    //9.1. OK
-    itOk({
+    itOk('5.3.1. Returns the string when it satisfies \'regexp\' option', {
+      type: 'object',
+      fields: {
+        field: {
+          type: 'string',
+          regexp: /^[a-f0-9]{32}$/i
+        }
+      }
+    }, {
+      field: '8a8fce7f8c6e16905732704bf4edd1d8'
+    }, {
+      field: '8a8fce7f8c6e16905732704bf4edd1d8'
+    });
+    itFail('5.3.2. Throws "INVALID_STRING" when it doesn\'t satisfy \'regexp\' option', {
+      type: 'object',
+      fields: {
+        field: {
+          type: 'string',
+          regexp: /^[a-f0-9]{32}$/i
+        }
+      }
+    }, {
+      field: 'invalid md5 hash'
+    }, 'INVALID_STRING', {
+      path: '_root.field',
+      src: 'invalid md5 hash'
+    });
+  });
+
+  describe('6. Limited set of allowed values', () => {
+    itOk('6.1. Returns the value when it\'s in \'values\' array option', {
       type: 'object',
       fields: {
         fruit: {
@@ -356,8 +371,7 @@ describe('validator', () => {
     }, {
       fruit: 'orange'
     });
-    //9.2. Fail
-    itFail({
+    itFail('6.2. Throws "NOT_IN_VALUES" when it\'s not in \'values\' array option', {
       type: 'object',
       fields: {
         fruit: {
@@ -371,10 +385,10 @@ describe('validator', () => {
       path: '_root.fruit',
       src: 'carrot'
     });
+  });
 
-    //10. Arrays
-    //10.1.1. Validating elements - OK
-    itOk({
+  describe('7. Arrays', () => {
+    itOk('7.1.1. Returns the array when all its elements satisfy template in \'element\' option', {
       type: 'object',
       fields: {
         field: {
@@ -389,8 +403,7 @@ describe('validator', () => {
     }, {
       field: [1]
     });
-    //10.1.2. Validating elements - type mismatch Fail
-    itFail({
+    itFail('7.1.2. Throws when not all array elements satisfy template in \'element\' option', {
       type: 'object',
       fields: {
         field: {
@@ -407,8 +420,7 @@ describe('validator', () => {
       type: 'string',
       expectedType: 'number'
     });
-    //10.2.1. Array length - OK
-    itOk({
+    itOk('7.2.1. Returns the array when its length is equal to \'length\' option', {
       type: 'object',
       fields: {
         field: {
@@ -420,12 +432,11 @@ describe('validator', () => {
         }
       }
     }, {
-      field: [1,2]
+      field: [1, 2]
     }, {
-      field: [1,2]
+      field: [1, 2]
     });
-    //10.2.2. Array length - Fail
-    itFail({
+    itFail('7.2.2. Throws "INVALID_LENGTH" when array length isn\'t equal to \'length\' option', {
       type: 'object',
       fields: {
         field: {
@@ -437,50 +448,19 @@ describe('validator', () => {
         }
       }
     }, {
-      field: [1,2,3]
+      field: [1, 2, 3]
     }, 'INVALID_LENGTH', {
       path: '_root.field',
-      src: [1,2,3],
+      src: [1, 2, 3],
       length: 3,
       expectedLength: 2
     });
+  });
 
-    //11. Using regular expressions
-    //11.1. OK
-    itOk({
-      type: 'object',
-      fields: {
-        field: {
-          type: 'string',
-          regexp: /^[a-f0-9]{32}$/i
-        }
-      }
-    }, {
-      field: '8a8fce7f8c6e16905732704bf4edd1d8'
-    }, {
-      field: '8a8fce7f8c6e16905732704bf4edd1d8'
-    });
-    //11.2. Fail
-    itFail({
-      type: 'object',
-      fields: {
-        field: {
-          type: 'string',
-          regexp: /^[a-f0-9]{32}$/i
-        }
-      }
-    }, {
-      field: 'invalid md5 hash'
-    }, 'INVALID_STRING', {
-      path: '_root.field',
-      src: 'invalid md5 hash'
-    });
-
-    //12. Custom validation
-    //12.1. OK
-    itOk({
+  describe('8. Advanced', () => {
+    itOk('8.1. Returns the value when it satisfies custom validation in \'validate\' option', {
       type: 'number',
-      validate: function(data, path) {
+      validate: function (data, path) {
         if (data % 2 !== 0) {
           throw new IamValidatorError(CODES.INVALID_CUSTOM_VALIDATE, {
             path: path,
@@ -489,10 +469,9 @@ describe('validator', () => {
         }
       }
     }, 0, 0);
-    //12.2. Fail
-    itFail({
+    itFail('8.2. Throws when value doesn\'t satisfy custom validation in \'validate\' option', {
       type: 'number',
-      validate: function(data, path) {
+      validate: function (data, path) {
         if (data % 2 !== 0) {
           throw new IamValidatorError(CODES.INVALID_CUSTOM_VALIDATE, {
             path: path,
@@ -504,32 +483,28 @@ describe('validator', () => {
       path: '_root',
       src: 1
     });
-
-    //13. Transform after validation
-    itOk({
+    itOk('8.3. Transform value after successful validation (option \'transform\')', {
       type: 'number',
       transform: function (data) {
         return data.toString()
       }
     }, 0, '0');
+  });
 
-    //14. Custom type validation
+  describe('9. Custom types', () => {
     let r1 = new Rational(1, 2);
     let r2 = new Rational(1, 0);
     Validator.registerValidator(Type.string(r1).toLowerCase(), validateRational);
-    //14.1. OK
-    itOk({
+    itOk('9.1. Returns the instance of custom type when it satisfies registered validator', {
       type: 'rational'
     }, r1, r1);
-    //14.2. Fail
-    itFail({
+    itFail('9.2. Throws when custom type instance doesn\'t satisfy registered validator', {
       type: 'rational'
     }, r2, 'RATIONAL_INCORRECT', {
       path: '_root',
       src: r2
     });
-    //14.1. isZeroValid
-    itOk({
+    itOk('9.3. Registered validator can use custom options', {
       type: 'rational',
       isZeroValid: true
     }, r2, r2);
