@@ -1,6 +1,6 @@
 {
   "name": "iamvalidator",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "JS object validator",
   "main": "lib/index.js",
   "author": "IamProject Node.js team",
