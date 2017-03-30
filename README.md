@@ -249,3 +249,16 @@ Example:
   type: 'date'
 }
 ```
+
+## Advanced
+### isNullable
+Any type can be allowed to be null.
+
+Example:
+
+```
+{
+  type: 'date',
+  isNullable: true
+}
+```

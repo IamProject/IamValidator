@@ -458,7 +458,17 @@ describe('validator', () => {
   });
 
   describe('8. Advanced', () => {
-    itOk('8.1. Returns the value when it satisfies custom validation in \'validate\' option', {
+    itOk('8.1.1 Returns null object when it is allowed', {
+      type: 'date',
+      isNullable: true
+    }, null, null);
+    itFail('8.1.2 Throws when null object isn\'t allowed', {
+      type: 'date'
+    }, null, 'UNALLOWED_NULL', {
+      path: '_root',
+      src: null
+    });
+    itOk('8.2.1 Returns the value when it satisfies custom validation in \'validate\' option', {
       type: 'number',
       validate: function (data, path) {
         if (data % 2 !== 0) {
@@ -469,7 +479,7 @@ describe('validator', () => {
         }
       }
     }, 0, 0);
-    itFail('8.2. Throws when value doesn\'t satisfy custom validation in \'validate\' option', {
+    itFail('8.2.2 Throws when value doesn\'t satisfy custom validation in \'validate\' option', {
       type: 'number',
       validate: function (data, path) {
         if (data % 2 !== 0) {
