@@ -250,6 +250,18 @@ Example:
 }
 ```
 
+### null
+
+Null object.
+
+Example:
+
+```
+{
+  type: 'null'
+}
+```
+
 ## Advanced
 ### isNullable
 Any type can be allowed to be null.

@@ -120,6 +120,16 @@ describe('validator', () => {
       type: 'string',
       expectedType: 'number'
     });
+    itOk('1.6. Returns null for null when the type set', {
+      type: 'null'
+    }, null, null);
+    itFail('1.7. Throws "TYPE_MISMATCH" on null-type template with nonnull value', {
+      type: 'null',
+    }, new Date(2017,1,1), 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'date',
+      expectedType: 'null'
+    });
   });
 
   describe('2. Missing fields', () => {
