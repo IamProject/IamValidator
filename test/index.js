@@ -509,6 +509,39 @@ describe('validator', () => {
         return data.toString()
       }
     }, 0, '0');
+    itOk('8.4. Transform a default value', {
+      type: 'object',
+      fields: {
+        "intString": {
+          type: 'number',
+          transform: function (data) {
+            return data.toString()
+          },
+          missing: "default",
+          default: 0
+        }
+      }
+    }, {}, {
+      intString: '0'
+    });
+    itOk('8.5. Transform a nested default value', {
+      type: 'object',
+      missing: "default",
+      fields: {
+        "intString": {
+          type: 'number',
+          missing: "default",
+          default: 0
+        }
+      },
+      transform: function (data) {
+        return {
+          anotherField: data.intString.toString()
+        }
+      },
+    }, {}, {
+      anotherField: '0'
+    });
   });
 
   describe('9. Custom types', () => {
