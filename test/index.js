@@ -503,18 +503,24 @@ describe('validator', () => {
       path: '_root',
       src: 1
     });
-    itOk('8.3. Transform value after successful validation (option \'transform\')', {
+    itOk('8.3. Transform value before validation (option \'transformBefore\')', {
       type: 'number',
-      transform: function (data) {
+      transformBefore: (data) => {
+        return Number(data);
+      }
+    }, '25', 25);
+    itOk('8.4. Transform value after successful validation (option \'transformAfter\')', {
+      type: 'number',
+      transformAfter: function (data) {
         return data.toString()
       }
     }, 0, '0');
-    itOk('8.4. Transform a default value', {
+    itOk('8.5. Transform a default value', {
       type: 'object',
       fields: {
         "intString": {
           type: 'number',
-          transform: function (data) {
+          transformAfter: function (data) {
             return data.toString()
           },
           missing: "default",
@@ -524,7 +530,7 @@ describe('validator', () => {
     }, {}, {
       intString: '0'
     });
-    itOk('8.5. Transform a nested default value', {
+    itOk('8.6. Transform a nested default value', {
       type: 'object',
       missing: "default",
       fields: {
@@ -534,7 +540,7 @@ describe('validator', () => {
           default: 0
         }
       },
-      transform: function (data) {
+      transformAfter: function (data) {
         return {
           anotherField: data.intString.toString()
         }
@@ -561,5 +567,47 @@ describe('validator', () => {
       type: 'rational',
       isZeroValid: true
     }, r2, r2);
+  });
+
+  describe('10. Backward compatibility', () => {
+    itOk('10.1. Transform value after successful validation (option \'transform\')', {
+      type: 'number',
+      transform: function (data) {
+        return data.toString()
+      }
+    }, 0, '0');
+    itOk('10.2. Transform a default value', {
+      type: 'object',
+      fields: {
+        "intString": {
+          type: 'number',
+          transform: function (data) {
+            return data.toString()
+          },
+          missing: "default",
+          default: 0
+        }
+      }
+    }, {}, {
+      intString: '0'
+    });
+    itOk('10.3. Transform a nested default value', {
+      type: 'object',
+      missing: "default",
+      fields: {
+        "intString": {
+          type: 'number',
+          missing: "default",
+          default: 0
+        }
+      },
+      transform: function (data) {
+        return {
+          anotherField: data.intString.toString()
+        }
+      },
+    }, {}, {
+      anotherField: '0'
+    });
   });
 });
