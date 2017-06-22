@@ -38,9 +38,17 @@ const UserValidator = new Validator({
           throw new ValidatorError('PASSWORD_HAS_NO_UPPERCSE_LETTERS');
         }
       },
-      transform: (pwd) => {
+      transformAfter: (pwd) => {
         //A password must be hashed after validation
         return Crypto.createHash('sha1').update(pwd).update(SALT).digest('hex');
+      }
+    },
+    kittens: {
+      type: 'number',
+      min: 0,
+      transformBefore: (count) => {
+        //A value may be passed as a string, and it will be converted to number before any validation
+        return Number(count);
       }
     }
   }
@@ -48,22 +56,26 @@ const UserValidator = new Validator({
 
 let user1 = {
   nickname: 'Vasia',
-  password: 'pwd123PWD'
+  password: 'pwd123PWD',
+  kittens: 1
 };
 
 let user2 = {
   nickname: 'Petia)))',
-  password: 'pwd321PWD'
+  password: 'pwd321PWD',
+  kittens: 0
 };
 
 let user3 = {
   nickname: 'Slava',
-  password: '123'
+  password: '123',
+  kittens: '0'
 };
 
 let user4 = {
   nickname: 'Slava',
-  password: 123
+  password: 123,
+  kittens: '2'
 };
 
 try {
@@ -125,7 +137,8 @@ Validator object constructor. Accepts validation template, an object in the foll
   default: '<default_value>', //required if 'missing' is specified
   values: [], //optional, a set of values allowed for this object
   validate: (TEMPLATE, data, path, options) => {}, //optional, a custom validation function
-  transform: (data) => {}, //optional, a custom function to transform the object after validation
+  transformBefore: (data) => {}, //optional, a custom function to transform the object before any validation
+  transformAfter: (data) => {}, //optional, a custom function to transform the object after validation
   //fields specific for the <type>
 }
 ```
