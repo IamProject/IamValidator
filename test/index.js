@@ -610,4 +610,23 @@ describe('validator', () => {
       anotherField: '0'
     });
   });
+
+  describe('11. Template arrays', () => {
+    itOk('11.1. Validate using one of templates', [{
+      type: 'number'
+    }, {
+      type: 'string',
+      regexp: /^\d+$/,
+      transformAfter: (data) => {
+        return Number(data);
+      }
+    }], '42', 42);
+    itFail('11.2. Throws when no template matches input', [{
+      type: 'number'
+    }], '42', 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'string',
+      expectedType: 'number'
+    });
+  });
 });

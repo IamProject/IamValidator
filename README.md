@@ -143,6 +143,11 @@ Validator object constructor. Accepts validation template, an object in the foll
 }
 ```
 
+Also accepts an array of validation templates.
+In case an array os passed, the values will be matched against every template consequently.
+The result of the *first* positive match will be returned.
+If not template matches, the error produced *last* will be thrown.
+
 ### validate(data, [options])
 
 Performs validation.
