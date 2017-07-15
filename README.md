@@ -134,6 +134,7 @@ Validator object constructor. Accepts validation template, an object in the foll
 {
   type: '<type>',
   missing: '<ignore>|<default>', //optional
+  extra: '<ignore>', //optional
   default: '<default_value>', //required if 'missing' is specified
   values: [], //optional, a set of values allowed for this object
   validate: (TEMPLATE, data, path, options) => {}, //optional, a custom validation function
