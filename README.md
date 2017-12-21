@@ -4,7 +4,7 @@ JS object validator
 
 # Example
 
-```
+```js
 const Validator = require('iamvalidator');
 const ValidatorError = Validator.IamValidatorError;
 const Crypto = require('crypto');
