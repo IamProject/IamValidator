@@ -395,6 +395,33 @@ describe('validator', () => {
       path: '_root.fruit',
       src: 'carrot'
     });
+    itOk('6.1. Returns the value when it\'s in \'values\' set option', {
+      type: 'object',
+      fields: {
+        fruit: {
+          type: 'string',
+          values: new Set(['apple', 'orange', 'banana'])
+        }
+      }
+    }, {
+      fruit: 'orange'
+    }, {
+      fruit: 'orange'
+    });
+    itFail('6.2. Throws "NOT_IN_VALUES" when it\'s not in \'values\' set option', {
+      type: 'object',
+      fields: {
+        fruit: {
+          type: 'string',
+          values: new Set(['apple', 'orange', 'banana'])
+        }
+      }
+    }, {
+      fruit: 'carrot'
+    }, 'NOT_IN_VALUES', {
+      path: '_root.fruit',
+      src: 'carrot'
+    });
   });
 
   describe('7. Arrays', () => {
