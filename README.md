@@ -149,6 +149,33 @@ In case an array is passed, the values will be matched against every template co
 The result of the *first* positive match will be returned.
 If no template matches, the error produced *last* will be thrown.
 
+Example:
+
+```
+[{
+  type: 'string',
+  regexp: /\d+/,
+  transformAfter: value => Number(value)
+}, {
+  type: 'number'
+}]
+```
+
+Variant notation is also supported:
+
+```
+{
+  type: 'variant',
+  variants: [{
+    type: 'string',
+    regexp: /\d+/,
+    transformAfter: value => Number(value)
+  }, {
+    type: 'number'
+  }]
+}
+```
+
 ### validate(data, [options])
 
 Performs validation.

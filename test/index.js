@@ -655,5 +655,27 @@ describe('validator', () => {
       type: 'string',
       expectedType: 'number'
     });
+    itOk('11.3. Validate using one of templates (variant notation)', {
+      type: 'variant',
+      variants: [{
+        type: 'number'
+      }, {
+        type: 'string',
+        regexp: /^\d+$/,
+        transformAfter: (data) => {
+          return Number(data);
+        }
+      }]
+    }, '42', 42);
+    itFail('11.4. Throws when no template matches input (variant notation)', {
+      type: 'variant',
+      variants: [{
+        type: 'number'
+      }]
+    }, '42', 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'string',
+      expectedType: 'number'
+    });
   });
 });
