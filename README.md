@@ -176,6 +176,37 @@ Variant notation is also supported:
 }
 ```
 
+If a `hint` function is provided to template variants, raw data is checked against that function.
+Templates with `hint` returning `true`-ish values are checked against first, no matter the actual order.
+This may be used to optimize large template validation.
+Example:
+
+```
+[{
+  type: 'object',
+  hint: rawValue => rawValue.kind === 'KIND_A',
+  fields: {
+    kind: {
+      type: 'string',
+      values: ['KIND_A', 'KIND_B']
+    }
+    // Dozens of fields for kind A
+  }
+}, {
+  type: 'object',
+  hint: rawValue => rawValue.kind === 'KIND_B',
+  fields: {
+    kind: {
+      type: 'string',
+      values: ['KIND_A', 'KIND_B']
+    }
+    // Dozens of fields for kind B, different from the ones for kind A
+  }
+}]
+```
+
+If an object field `kind` has value 'KIND_B', it will be checked against the second template before the second one.
+
 ### validate(data, [options])
 
 Performs validation.

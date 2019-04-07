@@ -677,5 +677,12 @@ describe('validator', () => {
       type: 'string',
       expectedType: 'number'
     });
+    itOk('11.5. Validate using one of templates (hints has priority)', [{
+      type: 'string'
+    }, {
+      type: 'string',
+      hint: value => value.startsWith('4'),
+      transformAfter: value => Number(value)
+    }], '42', 42);
   });
 });
