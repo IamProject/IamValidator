@@ -684,5 +684,19 @@ describe('validator', () => {
       hint: value => value.startsWith('4'),
       transformAfter: value => Number(value)
     }], '42', 42);
+    itFail('11.6. Validate using one of templates (use only template with hint returning true)', {
+      type: 'variant',
+      hintStrict: true,
+      variants: [{
+        type: 'string'
+      }, {
+        type: 'number',
+        hint: value => value.startsWith('4')
+      }]
+    }, '42', 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'string',
+      expectedType: 'number'
+    });
   });
 });
