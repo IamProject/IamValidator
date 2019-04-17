@@ -205,9 +205,10 @@ Example:
 }]
 ```
 
-If an object field `kind` has value 'KIND_B', it will be checked against the second template before the second one.
+If an object field `kind` has value 'KIND_B', it will be checked against the second template before the first one.
 
-If `hintStrict` option is provided, will validate only against first template variant whose `hint` matched raw data.
+If `hintStrict` option is provided,
+validation will be performed only against the first template variant whose `hint` matched raw data.
 If no `hint` matches, validation occurs as usual.
 
 ### validate(data, [options])
