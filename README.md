@@ -149,6 +149,68 @@ In case an array is passed, the values will be matched against every template co
 The result of the *first* positive match will be returned.
 If no template matches, the error produced *last* will be thrown.
 
+Example:
+
+```
+[{
+  type: 'string',
+  regexp: /\d+/,
+  transformAfter: value => Number(value)
+}, {
+  type: 'number'
+}]
+```
+
+Variant notation is also supported:
+
+```
+{
+  type: 'variant',
+  variants: [{
+    type: 'string',
+    regexp: /\d+/,
+    transformAfter: value => Number(value)
+  }, {
+    type: 'number'
+  }]
+}
+```
+
+If a `hint` function is provided to template variants, raw data is checked against that function.
+Templates with `hint` returning `true`-ish values are checked against first, no matter the actual order.
+This may be used to optimize large template validation.
+Example:
+
+```
+[{
+  type: 'object',
+  hint: rawValue => rawValue.kind === 'KIND_A',
+  fields: {
+    kind: {
+      type: 'string',
+      values: ['KIND_A', 'KIND_B']
+    }
+    // Dozens of fields for kind A
+  }
+}, {
+  type: 'object',
+  hint: rawValue => rawValue.kind === 'KIND_B',
+  fields: {
+    kind: {
+      type: 'string',
+      values: ['KIND_A', 'KIND_B']
+    }
+    // Dozens of fields for kind B, different from the ones for kind A
+  }
+}]
+```
+
+If an object field `kind` has value 'KIND_B', it will be checked against the second template before the first one.
+
+If `hintStrict` option is provided,
+validation will be performed only against the first template variant whose `hint` matched raw data.
+If no `hint` matches, validation occurs as usual.
+
 ### validate(data, [options])
 
 Performs validation.

@@ -655,5 +655,48 @@ describe('validator', () => {
       type: 'string',
       expectedType: 'number'
     });
+    itOk('11.3. Validate using one of templates (variant notation)', {
+      type: 'variant',
+      variants: [{
+        type: 'number'
+      }, {
+        type: 'string',
+        regexp: /^\d+$/,
+        transformAfter: (data) => {
+          return Number(data);
+        }
+      }]
+    }, '42', 42);
+    itFail('11.4. Throws when no template matches input (variant notation)', {
+      type: 'variant',
+      variants: [{
+        type: 'number'
+      }]
+    }, '42', 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'string',
+      expectedType: 'number'
+    });
+    itOk('11.5. Validate using one of templates (hints has priority)', [{
+      type: 'string'
+    }, {
+      type: 'string',
+      hint: value => value.startsWith('4'),
+      transformAfter: value => Number(value)
+    }], '42', 42);
+    itFail('11.6. Validate using one of templates (use only template with hint returning true)', {
+      type: 'variant',
+      hintStrict: true,
+      variants: [{
+        type: 'string'
+      }, {
+        type: 'number',
+        hint: value => value.startsWith('4')
+      }]
+    }, '42', 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'string',
+      expectedType: 'number'
+    });
   });
 });
