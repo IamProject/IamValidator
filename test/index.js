@@ -50,11 +50,11 @@ function itOk(title, template, source, expectedResult, options) {
   });
 }
 
-function itFail(title, template, source, code, extraData) {
+function itFail(title, template, source, code, extraData, options) {
   let validator = new Validator(template);
   it(title, () => {
     assert.throws(() => {
-      validator.validate(source);
+      validator.validate(source, options);
     }, (err) => {
       if (!(err instanceof IamValidatorError)) {
         return false;
@@ -741,5 +741,24 @@ describe('validator', () => {
     itOk('12.3. Registered validator is preferred over "object" validator', {
       type: CustomClass2
     }, instance2, instance2);
+  });
+
+  describe('13. "arrayPathMode" option', () => {
+    itFail('13.1. Path is array when "arrayPathMode" is true', {
+      type: 'object',
+      fields: {
+        propName: {
+          type: 'string'
+        }
+      }
+    }, {
+      propName: 100
+    }, 'TYPE_MISMATCH', {
+      path: ['_root', 'propName'],
+      type: 'number',
+      expectedType: 'string'
+    }, {
+      arrayPathMode: true
+    });
   });
 });
