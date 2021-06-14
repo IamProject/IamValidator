@@ -218,6 +218,7 @@ Performs validation.
 Possible options are:
 
 * `ignoreMissing` -- force missing fields to be ignored
+* `arrayPathMode` -- use array path (like `['_root', 'x', 'y]`) instead of string path (`'_root.x.y'`)
 
 Returns the validated data.
 
@@ -355,3 +356,23 @@ Example:
   isNullable: true
 }
 ```
+
+### Object prototype (class) as "type"
+
+Example:
+
+```
+class CustomClass {
+  constructor() {
+    //
+  }
+}
+
+{
+  type: CustomClass
+}
+```
+
+`registerValidator` may be used to validate instances of a class and preserve them as is. If no validator is specified,
+`'object'` validator is used by default. This leads to loss of some properties (like instance methods) as objects are
+mapped (no reference equality of input and output data).
