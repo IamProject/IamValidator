@@ -719,8 +719,13 @@ describe('validator', () => {
       }
     }
 
+    const CustomClass3 = function () {
+      this.propName3 = 'propValue3';
+    };
+
     const instance1 = new CustomClass1();
     const instance2 = new CustomClass2();
+    const instance3 = new CustomClass3();
 
     itOk('12.1. Returns the instance of custom type when it satisfies type', {
       type: CustomClass1,
@@ -741,6 +746,14 @@ describe('validator', () => {
     itOk('12.3. Registered validator is preferred over "object" validator', {
       type: CustomClass2
     }, instance2, instance2);
+    itOk('12.4. Returns the instance of custom type when it satisfies type (nameless prototypes)', {
+      type: CustomClass3,
+      fields: {
+        propName3: {
+          type: 'string'
+        }
+      }
+    }, instance3, {...instance3});
   });
 
   describe('13. "arrayPathMode" option', () => {

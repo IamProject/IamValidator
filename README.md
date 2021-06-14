@@ -218,7 +218,7 @@ Performs validation.
 Possible options are:
 
 * `ignoreMissing` -- force missing fields to be ignored
-* `arrayPathMode` -- use array path (like `['_root', 'x', 'y]`) instead of string path (`'_root.x.y'`)
+* `arrayPathMode` -- use array path (like `['_root', 'x', 'y']`) instead of string path (`'_root.x.y'`)
 
 Returns the validated data.
 
