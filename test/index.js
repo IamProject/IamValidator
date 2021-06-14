@@ -36,6 +36,12 @@ function validateRational(TEMPLATE, data, path, options) {
   return data;
 }
 
+function validateCustomClass2Instance(TEMPLATE, data) {
+  // Ignore fields
+
+  return data;
+}
+
 
 function itOk(title, template, source, expectedResult, options) {
   let validator = new Validator(template);
@@ -44,11 +50,11 @@ function itOk(title, template, source, expectedResult, options) {
   });
 }
 
-function itFail(title, template, source, code, extraData) {
+function itFail(title, template, source, code, extraData, options) {
   let validator = new Validator(template);
   it(title, () => {
     assert.throws(() => {
-      validator.validate(source);
+      validator.validate(source, options);
     }, (err) => {
       if (!(err instanceof IamValidatorError)) {
         return false;
@@ -697,6 +703,75 @@ describe('validator', () => {
       path: '_root',
       type: 'string',
       expectedType: 'number'
+    });
+  });
+
+  describe('12. Prototypes as "type"', () => {
+    class CustomClass1 {
+      constructor() {
+        this.propName = 'propValue';
+      }
+    }
+
+    class CustomClass2 {
+      constructor() {
+        this.propName2 = 'propValue2';
+      }
+    }
+
+    const CustomClass3 = function () {
+      this.propName3 = 'propValue3';
+    };
+
+    const instance1 = new CustomClass1();
+    const instance2 = new CustomClass2();
+    const instance3 = new CustomClass3();
+
+    itOk('12.1. Returns the instance of custom type when it satisfies type', {
+      type: CustomClass1,
+      fields: {
+        propName: {
+          type: 'string'
+        }
+      }
+    }, instance1, {...instance1});
+    itFail('12.2. Throws when custom type instance doesn\'t satisfy type', {
+      type: 'string'
+    }, instance1, 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'customclass1',
+      expectedType: 'string'
+    });
+    Validator.registerValidator(CustomClass2, validateCustomClass2Instance);
+    itOk('12.3. Registered validator is preferred over "object" validator', {
+      type: CustomClass2
+    }, instance2, instance2);
+    itOk('12.4. Returns the instance of custom type when it satisfies type (nameless prototypes)', {
+      type: CustomClass3,
+      fields: {
+        propName3: {
+          type: 'string'
+        }
+      }
+    }, instance3, {...instance3});
+  });
+
+  describe('13. "arrayPathMode" option', () => {
+    itFail('13.1. Path is array when "arrayPathMode" is true', {
+      type: 'object',
+      fields: {
+        propName: {
+          type: 'string'
+        }
+      }
+    }, {
+      propName: 100
+    }, 'TYPE_MISMATCH', {
+      path: ['_root', 'propName'],
+      type: 'number',
+      expectedType: 'string'
+    }, {
+      arrayPathMode: true
     });
   });
 });
