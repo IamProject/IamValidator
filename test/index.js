@@ -36,6 +36,12 @@ function validateRational(TEMPLATE, data, path, options) {
   return data;
 }
 
+function validateCustomClass2Instance(TEMPLATE, data) {
+  // Ignore fields
+
+  return data;
+}
+
 
 function itOk(title, template, source, expectedResult, options) {
   let validator = new Validator(template);
@@ -698,5 +704,42 @@ describe('validator', () => {
       type: 'string',
       expectedType: 'number'
     });
+  });
+
+  describe('12. Prototypes as "type"', () => {
+    class CustomClass1 {
+      constructor() {
+        this.propName = 'propValue';
+      }
+    }
+
+    class CustomClass2 {
+      constructor() {
+        this.propName2 = 'propValue2';
+      }
+    }
+
+    const instance1 = new CustomClass1();
+    const instance2 = new CustomClass2();
+
+    itOk('12.1. Returns the instance of custom type when it satisfies type', {
+      type: CustomClass1,
+      fields: {
+        propName: {
+          type: 'string'
+        }
+      }
+    }, instance1, {...instance1});
+    itFail('12.2. Throws when custom type instance doesn\'t satisfy type', {
+      type: 'string'
+    }, instance1, 'TYPE_MISMATCH', {
+      path: '_root',
+      type: 'customclass1',
+      expectedType: 'string'
+    });
+    Validator.registerValidator(CustomClass2, validateCustomClass2Instance);
+    itOk('12.3. Registered validator is preferred over "object" validator', {
+      type: CustomClass2
+    }, instance2, instance2);
   });
 });
