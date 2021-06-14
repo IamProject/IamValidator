@@ -137,7 +137,8 @@ Validator object constructor. Accepts validation template, an object in the foll
   extra: 'ignore', //optional
   default: '<default_value>', //required if 'missing' is specified
   values: []|Set, //optional, an array or set of values allowed for this object
-  validate: (TEMPLATE, data, path, options) => {}, //optional, a custom validation function
+  validateBefore: (data, path, options, TEMPLATE, rootData, context) => {}, //optional, a custom validation function
+  validateAfter: (data, path, options, TEMPLATE, rootData, context) => {}, //optional, a custom validation function
   transformBefore: (data) => {}, //optional, a custom function to transform the object before any validation
   transformAfter: (data) => {}, //optional, a custom function to transform the object after validation
   //fields specific for the <type>
@@ -148,6 +149,9 @@ Also accepts an array of validation templates.
 In case an array is passed, the values will be matched against every template consequently.
 The result of the *first* positive match will be returned.
 If no template matches, the error produced *last* will be thrown.
+
+`validateBefore` validates data after checking the type, but before any default validators.
+`validateAfter` validates data after default validators, just before `transformAfter`.
 
 Example:
 
@@ -219,6 +223,7 @@ Possible options are:
 
 * `ignoreMissing` -- force missing fields to be ignored
 * `arrayPathMode` -- use array path (like `['_root', 'x', 'y']`) instead of string path (`'_root.x.y'`)
+* `context` -- a context passed to custom validation functions (empty array by default)
 
 Returns the validated data.
 

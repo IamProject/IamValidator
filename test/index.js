@@ -581,6 +581,119 @@ describe('validator', () => {
     }, {}, {
       anotherField: '0'
     });
+    itFail('8.7.1 Throws correct error when "validateBefore" is specified (used before standard validator)', {
+      type: 'string',
+      min: 10,
+      validateBefore: (data, path) => {
+        if (data.includes('stop')) {
+          throw new IamValidatorError('STOP_WORD', {
+            path: path,
+            src: data
+          })
+        }
+      }
+    }, 'contains stop-word but still has valid length', 'STOP_WORD', {
+      path: '_root',
+      src: 'contains stop-word but still has valid length'
+    });
+    itFail('8.7.2 Can use "context"', {
+      type: 'array',
+      element: {
+        type: 'string',
+        validateBefore: (data, path, options, TEMPLATE, rootData, context) => {
+          context.totalLength += data.length;
+
+          if (context.totalLength > 10) {
+            throw new IamValidatorError('TOTAL_LENGTH_EXCEEDED', {
+              path: path,
+              src: data
+            })
+          }
+        }
+      }
+    }, ['string', 'another string'], 'TOTAL_LENGTH_EXCEEDED', {
+      path: '_root.1',
+      src: 'another string'
+    }, {
+      context: {
+        totalLength: 0
+      }
+    });
+    const complexTemplate = {
+      type: 'object',
+      fields: {
+        type: {
+          type: 'string'
+        },
+        children: {
+          type: 'array',
+          element: {
+            type: 'object',
+            fields: {
+              type: {
+                type: 'string'
+              },
+              children: {
+                type: 'array',
+                element: {
+                  type: 'object',
+                  fields: {
+                    type: {
+                      type: 'string'
+                    }
+                  },
+                  validateBefore: (data, path, options, TEMPLATE, rootData) => {
+                    const parent = path.slice(1, -2).reduce((acc, segment) => acc[segment], rootData);
+
+                    if ((data.type === 'text') && (parent.type !== 'list')) {
+                      throw new IamValidatorError('INVALID_PARENT', {
+                        path: path,
+                        src: data
+                      })
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    };
+    itOk('8.7.3 Can use "rootData" (1)', complexTemplate, {
+      type: 'list',
+      children: [{
+        type: 'list',
+        children: [{
+          type: 'text'
+        }]
+      }]
+    }, {
+      type: 'list',
+      children: [{
+        type: 'list',
+        children: [{
+          type: 'text'
+        }]
+      }]
+    }, {
+      arrayPathMode: true
+    });
+    itFail('8.7.4 Can use "rootData" (2)', complexTemplate, {
+      type: 'list',
+      children: [{
+        type: 'group',
+        children: [{
+          type: 'text'
+        }]
+      }]
+    }, 'INVALID_PARENT', {
+      path: [ '_root', 'children', 0, 'children', 0 ],
+      src: {
+        type: 'text'
+      }
+    }, {
+      arrayPathMode: true
+    });
   });
 
   describe('9. Custom types', () => {
