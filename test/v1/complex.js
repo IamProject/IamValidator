@@ -3,7 +3,7 @@ const assert = require('assert');
 const {createValidator} = require('../../lib/v1');
 
 describe('complex', () => {
-  it('should validate complex data', done => {
+  it('should validate complex data with asynchronous validateAfter', done => {
     const validator = createValidator({
       type: 'object',
       fields: {
@@ -22,7 +22,10 @@ describe('complex', () => {
                     type: 'date'
                   }
                 }
-              }
+              },
+              validateAfter: (data, done) => setTimeout(() => {
+                done(null, data);
+              }, 10)
             }
           }
         },
@@ -137,7 +140,6 @@ describe('complex', () => {
       },
       second: '12345'
     }, (err, result) => {
-      console.log('\n\n\n\n\n', err, '\n\n\n\n');
       assert.deepStrictEqual(err, {
         code: 'TEST_ERROR',
         data: end,

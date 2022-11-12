@@ -150,7 +150,7 @@ UserValidator.validate(user4, (err, result) => {
 
 # API
 
-## createValidator(template, {customTypes = []} = {})
+## createValidator(template, {customTypes = [], maxDelayNsecs = 1000000} = {})
 
 Creates a validator. Accepts validation template, an object in the following form:
 
@@ -182,7 +182,7 @@ Example:
 }
 ```
 
-### validate(data, done, {context = {}} = {})
+### validate(data, done, {context = {}, maxDelayNsecs = validatorMaxDelayMsecs} = {})
 
 Performs validation.
 
@@ -192,6 +192,8 @@ Performs validation.
 Possible options are:
 
 * `context` -- a context passed to custom validation functions (empty array by default)
+* `maxDelayNsecs` -- if validation takes longer than this value (in nanoseconds), next portion of validation will be
+  delayed until next event loop iteration if possible
 
 ### IAmValidatorErrorCode
 
