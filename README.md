@@ -2,53 +2,78 @@
 
 JS object validator
 
+**WARNING: BREAKING CHANGES!** The package has been rewritten. New version is exported under `v1`.
+To keep backward compatibility, old version is exported as before. Old README is available under tha name `READMEv0.md`
+
+The new version is not compatible with the old one. Some of new features/changes:
+
+* Callbacks are used to allow asynchronous validation.
+* New custom method (`validateBefore`, `validateAfter`, etc.) signatures (all options are passed as object)
+* Constraint names are changed (e.g. `min -> minValue (number) / minLength (array)`)
+* Some error codes are replaced/changed, new ones are introduced
+* `extraData` is renamed to `info`
+* `path` is now always an array and there is no root element now
+
 # Example
 
 ```js
-const Validator = require('iamvalidator');
-const ValidatorError = Validator.IamValidatorError;
-const Crypto = require('crypto');
+const {createValidator} = require('iamvalidator').v1;
+const DB = require('../lib/database');
 
-const SALT = 'salt';
-
-const UserValidator = new Validator({
+const UserValidator = createValidator({
   type: 'object',
   fields: {
     nickname: {
-      type: 'string',           //Nickname must be a string
-      min: 4,                   //with a minimum length of 4
-      max: 20,                  //and maximum length of 20
-      regexp: /^[a-zA-Z0-9_]+$/ //consisting of latin letters, digits and underscores
+      type: 'string',           // Nickname must be a string
+      minLength: 4,                   // with a minimum length of 4
+      maxLength: 20,                  // and maximum length of 20
+      regexp: /^[a-zA-Z0-9_]+$/ // consisting of latin letters, digits and underscores
     },
     password: {
-      type: 'string', //password must be a string
-      min: 8,         //with a minimum length of 8
-      max: 32,        //and maximum length of 32
-      validate: (pwd) => {
-        //A password must contain at least one digin
+      type: 'string', // password must be a string
+      minLength: 8,         // with a minimum length of 8
+      maxLength: 32,        // and maximum length of 32
+      validate: (pwd, done) => {
+        // A password must contain at least one digin
         if (!/[0-9]/.test(pwd)) {
-          throw new ValidatorError('PASSWORD_HAS_NO_DIGITS');
+          done({code: 'PASSWORD_HAS_NO_DIGITS'});
+
+          return;
         }
-        //A password must contain at least one lowercase letter
+
+        // A password must contain at least one lowercase letter
         if (!/[a-z]/.test(pwd)) {
-          throw new ValidatorError('PASSWORD_HAS_NO_LOWERCASE_LETTERS');
+          done({code: 'PASSWORD_HAS_NO_LOWERCASE_LETTERS'});
+
+          return;
         }
-        //A password must contain at least one uppercase letter
+
+        // A password must contain at least one uppercase letter
         if (!/[A-Z]/.test(pwd)) {
-          throw new ValidatorError('PASSWORD_HAS_NO_UPPERCSE_LETTERS');
+          done({code: 'PASSWORD_HAS_NO_UPPERCSE_LETTERS'});
+
+          return;
         }
+
+        done(null, pwd);
       },
-      transformAfter: (pwd) => {
-        //A password must be hashed after validation
-        return Crypto.createHash('sha1').update(pwd).update(SALT).digest('hex');
+      transformAfter: async (pwd, done) => {
+        try {
+          const salt = await DB.from('salt').select('value').where('type', '=', "'password'");
+
+          // A password must be hashed after validation
+          done(null, Crypto.createHash('sha1').update(pwd).update(salt).digest('hex'));
+        } catch (err) {
+          done({code: 'INTERNAL_ERROR'});
+        }
       }
     },
     kittens: {
       type: 'number',
-      min: 0,
-      transformBefore: (count) => {
-        //A value may be passed as a string, and it will be converted to number before any validation
-        return Number(count);
+      minValue: 0,
+      transformBefore: (count, done) => {
+        // A value may be passed as a string, and it will be converted to number before any validation
+        done(null, Number(count));
       }
     }
   }
@@ -78,77 +103,71 @@ let user4 = {
   kittens: '2'
 };
 
-try {
-  console.log(UserValidator.validate(user1));
-  /*{
+UserValidator.validate(user1, (err, result) => {
+  console.log(err, result);
+
+  /* null, {
     nickname: 'Vasia',
     password: 'f3e4c83aa7c6a1da18f1facf63dcdf21c3f8a881'
-  }*/
-} catch (err) {
-  console.error(err);
-}
+  } */
+});
 
-try {
-  console.log(UserValidator.validate(user2));
-} catch (err) {
-  console.error(err); //INVALID_STRING
-}
+UserValidator.validate(user2, (err, result) => {
+  console.log(err, result);
 
-try {
-  console.log(UserValidator.validate(user3));
-} catch (err) {
-  console.error(err); //PASSWORD_HAS_NO_LOWERCASE_LETTERS
-}
+  /* {
+    code: 'INVALID_STRING',
+    data: 'Petia)))',
+    path: ['nickname'],
+    info: {}
+  } */
+});
 
-try {
-  console.log(UserValidator.validate(user4));
-} catch (err) {
-  console.error(err); //TYPE_MISMATCH
-}
+UserValidator.validate(user3, (err, result) => {
+  console.log(err, result);
+
+  /* {
+    code: 'PASSWORD_HAS_NO_LOWERCASE_LETTERS',
+    data: '123',
+    path: ['password'],
+    info: {}
+  } */
+});
+
+UserValidator.validate(user4, (err, result) => {
+  console.log(err, result);
+
+  /* {
+    code: 'TYPE_MISMATCH',
+    data: 123,
+    path: ['password'],
+    info: {
+      expectedType: 'string'
+    }
+  } */
+});
 ```
 
 # API
 
-## IamValidator
+## createValidator(template, {customTypes = []} = {})
 
-Class representing a validator
-
-### IamValidator.registerValidator(typeName, validator)
-
-Registers a validation function for the type specified.
-
-`validator` function is called with the following parameters:
-
-* `TEMPLATE` -- validation template
-* `data` -- data to validate
-* `path` -- path to field being validated (`_root`, `_root.field1`, `_root.field1.sub_field2`, etc.)
-* `options` -- options passed to `IamValidator.validate` method
-
-The function must return the validated data, or throw an error.
-
-### constructor(TEMPLATE)
-
-Validator object constructor. Accepts validation template, an object in the following form:
+Creates a validator. Accepts validation template, an object in the following form:
 
 ```
 {
-  type: '<type>',
-  missing: 'ignore'|'default', //optional
-  extra: 'ignore', //optional
-  default: '<default_value>', //required if 'missing' is specified
-  values: []|Set, //optional, an array or set of values allowed for this object
-  validateBefore: (data, path, options, TEMPLATE, rootData, context) => {}, //optional, a custom validation function
-  validateAfter: (data, path, options, TEMPLATE, rootData, context) => {}, //optional, a custom validation function
-  transformBefore: (data) => {}, //optional, a custom function to transform the object before any validation
-  transformAfter: (data) => {}, //optional, a custom function to transform the object after validation
-  //fields specific for the <type>
+  type: <type>,
+  missingStartegy: [MissingStrategy], // optional
+  extraStrategy: [ExtraStrategy], // optional
+  defaultValue: [default_value], // optional, only required if missingStartegy is MissingStrategy.Default
+  values: Array|Set, // optional, an array or set of values allowed, only valid for types 'string', 'boolean', 'number'
+  validateBefore: (data, done, options) => {}, // optional, a custom validation function called before other validators
+  validateAfter: (data, done, options) => {}, // optional, a custom validation function called after other validators
+  transformBefore: (data, done, options) => {}, // optional, a custom function to transform the object before validation
+  transformAfter: (data, done, options) => {}, // optional, a custom function to transform the object after validation
+  // ...fields specific for the <type>
 }
 ```
-
-Also accepts an array of validation templates.
-In case an array is passed, the values will be matched against every template consequently.
-The result of the *first* positive match will be returned.
-If no template matches, the error produced *last* will be thrown.
 
 `validateBefore` validates data after checking the type, but before any default validators.
 `validateAfter` validates data after default validators, just before `transformAfter`.
@@ -156,102 +175,50 @@ If no template matches, the error produced *last* will be thrown.
 Example:
 
 ```
-[{
+{
   type: 'string',
   regexp: /\d+/,
-  transformAfter: value => Number(value)
-}, {
-  type: 'number'
-}]
-```
-
-Variant notation is also supported:
-
-```
-{
-  type: 'variant',
-  variants: [{
-    type: 'string',
-    regexp: /\d+/,
-    transformAfter: value => Number(value)
-  }, {
-    type: 'number'
-  }]
+  transformAfter: (value, done) => done(null, Number(value))
 }
 ```
 
-If a `hint` function is provided to template variants, raw data is checked against that function.
-Templates with `hint` returning `true`-ish values are checked against first, no matter the actual order.
-This may be used to optimize large template validation.
-Example:
-
-```
-[{
-  type: 'object',
-  hint: rawValue => rawValue.kind === 'KIND_A',
-  fields: {
-    kind: {
-      type: 'string',
-      values: ['KIND_A', 'KIND_B']
-    }
-    // Dozens of fields for kind A
-  }
-}, {
-  type: 'object',
-  hint: rawValue => rawValue.kind === 'KIND_B',
-  fields: {
-    kind: {
-      type: 'string',
-      values: ['KIND_A', 'KIND_B']
-    }
-    // Dozens of fields for kind B, different from the ones for kind A
-  }
-}]
-```
-
-If an object field `kind` has value 'KIND_B', it will be checked against the second template before the first one.
-
-If `hintStrict` option is provided,
-validation will be performed only against the first template variant whose `hint` matched raw data.
-If no `hint` matches, validation occurs as usual.
-
-### validate(data, [options])
+### validate(data, done, {context = {}} = {})
 
 Performs validation.
 
+* `data` -- data to be validated
+* `done` -- callback function called after validation with either `(null, newData)` or `(error)`
+
 Possible options are:
 
-* `ignoreMissing` -- force missing fields to be ignored
-* `arrayPathMode` -- use array path (like `['_root', 'x', 'y']`) instead of string path (`'_root.x.y'`)
 * `context` -- a context passed to custom validation functions (empty array by default)
 
-Returns the validated data.
-
-## IamValidator.IamValidatorError
-
-Class inheriting Node.js Error class. Represents a validation error.
-
-### IamValidatorError.CODES
+### IAmValidatorErrorCode
 
 Constant containing the error codes:
 
-* `EXTRA_FIELDS`
-* `MISSING_DEFAULT_FIELD`
-* `MISSING_FIELD`
-* `ELEMENT_NOT_SPECIFIED`
-* `TYPE_MISMATCH`
-* `NO_VALIDATOR`
-* `NOT_IN_VALUES`
-
-### constructor(code, [extraData])
-
-Error object constructor.
-
-`extraData` is an optional argument, used to attach arbitrary extra data to an error object instance.
+```
+{
+    BooleanNotInValues: 'BOOLEAN_NOT_IN_VALUES',
+    CustomError: 'CUSTOM_ERROR',
+    ExtraFields: 'EXTRA_FIELDS',
+    InvalidArrayLength: 'INVALID_ARRAY_LENGTH',
+    InvalidNumber: 'INVALID_NUMBER',
+    InvalidString: 'INVALID_STRING',
+    InvalidStringLength: 'INVALID_STRING_LENGTH',
+    MissingField: 'MISSING_FIELD',
+    NumberNotInteger: 'NUMBER_NOT_INTEGER',
+    NumberNotInValues: 'NUMBER_NOT_IN_VALUES',
+    NoMatchingVariant: 'NO_MATCHING_VARIANT',
+    StringNotInValues: 'STRING_NOT_IN_VALUES',
+    TypeMismatch: 'TYPE_MISMATCH',
+    UnallowedNull: 'UNALLOWED_NULL'
+}
+```
 
 ## Types
 
-There are several builtin types. `type-of-is` pachage is used to determine object's type.
+There are several builtin types. 
 
 ### object
 
@@ -263,7 +230,7 @@ Example:
 {
   type: 'object',
   fields: {
-    //nested fields
+    // nested fields
   }
 }
 ```
@@ -278,7 +245,7 @@ Example:
 {
   type: 'array',
   element: {
-    //element definition
+    // element definition
   }
 }
 ```
@@ -292,10 +259,10 @@ Example:
 ```
 {
   type: 'string',
-  min: <M>, //optional, minimum string length
-  max: <N>, //optional, maximum string length
-  length: <K>, //optional, exact string length
-  regexp: <R> //optional, a regular expression to match the string against
+  minLength: [M], // optional, minimum string length
+  maxLength: [N], // optional, maximum string length
+  length: [K], // optional, exact string length
+  regexp: [R] // optional, a regular expression to match the string against
 }
 ```
 
@@ -308,8 +275,9 @@ Example:
 ```
 {
   type: 'number',
-  min: <M>, //optional, minimum value
-  max: <N>, //optional, maximum value
+  minValue: [M], // optional, minimum value
+  maxValue: [N], // optional, maximum value
+  isInteger: [true|false] // optional, specifies if number must be an integer
 }
 ```
 
@@ -325,39 +293,68 @@ Example:
 }
 ```
 
-### date
+### variant
 
-An instance of JavaScript Date object.
-
-Example:
-
-```
-{
-  type: 'date'
-}
-```
-
-### null
-
-Null object.
+Used to validate against multiple templates. The result of first successful validation is used.
 
 Example:
 
 ```
 {
-  type: 'null'
+  type: 'variant',
+  variants: [{
+    type: 'string',
+    regexp: /\d+/,
+    transformAfter: (data, done) => done(null, Number(value))
+  }, {
+    type: 'number'
+  }]
 }
 ```
+
+If `hint` function is provided to template variants, raw data is checked against that function.
+Templates with `hint` returning `false`-ish values are excluded from validation.
+Templates are used in the same order they are specified.
+This may be used to optimize large template validation.
+Example:
+
+```
+[{
+  type: 'object',
+  hint: (rawValue, done) => done(rawValue.kind === 'KIND_A'),
+  fields: {
+    kind: {
+      type: 'string',
+      values: ['KIND_A']
+    }
+    // Dozens of fields for kind A
+  }
+}, {
+  type: 'object',
+  hint: (rawValue, done) => done(rawValue.kind === 'KIND_B'),
+  fields: {
+    kind: {
+      type: 'string',
+      values: ['KIND_B']
+    }
+    // Dozens of fields for kind B, different from the ones for kind A
+  }
+}]
+```
+
+If no variant matches the data, a NoMatchingVariant error occurs.
 
 ## Advanced
+
 ### isNullable
+
 Any type can be allowed to be null.
 
 Example:
 
 ```
 {
-  type: 'date',
+  type: 'string',
   isNullable: true
 }
 ```
@@ -378,6 +375,6 @@ class CustomClass {
 }
 ```
 
-`registerValidator` may be used to validate instances of a class and preserve them as is. If no validator is specified,
+`customTypes` may be used to validate instances of a class and preserve them as is. If no validator is specified,
 `'object'` validator is used by default. This leads to loss of some properties (like instance methods) as objects are
 mapped (no reference equality of input and output data).
