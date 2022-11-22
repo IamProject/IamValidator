@@ -174,7 +174,7 @@ describe('array', () => {
     });
   });
 
-  it('should return null for template of type "array" null is passed and "isNullable" flag is true', done => {
+  it('should return null for template of type "array" if null is passed and "isNullable" flag is true', done => {
     const validator = createValidator({
       type: 'array',
       element: {
@@ -191,7 +191,7 @@ describe('array', () => {
     });
   });
 
-  it('should return error for template of type "array" null is passed and "isNullable" flag is not true', done => {
+  it('should return error for template of type "array" if null is passed and "isNullable" flag is not true', done => {
     const validator = createValidator({
       type: 'array',
       element: {
@@ -204,6 +204,72 @@ describe('array', () => {
         code: IAmValidatorErrorCode.UnallowedNull,
         data: null,
         info: {},
+        path: []
+      });
+      assert.strictEqual(result, undefined);
+
+      done();
+    });
+  });
+
+  it('should allow duplicate items for template of type "array" if "forbidDuplicates" flag is not set', done => {
+    const validator = createValidator({
+      type: 'array',
+      element: {
+        type: 'number'
+      }
+    });
+
+    validator.validate([1, 2, 3, 1, 2], (err, result) => {
+      assert.strictEqual(err, null);
+      assert.deepStrictEqual(result, [1, 2, 3, 1, 2]);
+
+      done();
+    });
+  });
+
+  it('should return error for template of type "array" if "forbidDuplicates" flag is set to true', done => {
+    const validator = createValidator({
+      type: 'array',
+      element: {
+        type: 'number'
+      },
+      forbidDuplicates: true
+    });
+
+    validator.validate([1, 2, 3, 1], (err, result) => {
+      assert.deepStrictEqual(err, {
+        code: IAmValidatorErrorCode.DuplicateItems,
+        data: [1, 2, 3, 1],
+        info: {indexes: [0, 3]},
+        path: []
+      });
+      assert.strictEqual(result, undefined);
+
+      done();
+    });
+  });
+
+  it('should utilize "checkEquality" method and return error for template of type "array" if "forbidDuplicates" flag is set to true', done => {
+    const validator = createValidator({
+      type: 'array',
+      element: {
+        type: 'object',
+        fields: {
+          internal: {
+            type: 'number'
+          }
+        }
+      },
+      forbidDuplicates: true,
+      checkEquality: (i1, i2) => i1.internal === i2.internal
+    });
+
+    validator.validate([{internal: 1}, {internal: 2}, {internal: 1}], (err, result) => {
+      assert.deepStrictEqual(err, {
+        code: IAmValidatorErrorCode.DuplicateItems,
+        data: [{internal: 1}, {internal: 2}, {internal: 1}],
+        info: {indexes: [0, 2]},
         path: []
       });
       assert.strictEqual(result, undefined);
