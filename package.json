@@ -1,11 +1,11 @@
 {
   "name": "iamvalidator",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "description": "JS object validator",
   "main": "lib/index.js",
   "author": "IamProject Node.js team",
   "scripts": {
-    "test": "./node_modules/.bin/mocha ./test/**.js"
+    "test": "mocha ./test/*"
   },
   "repository": {
     "type": "git",
@@ -19,7 +19,7 @@
     "underscore": "^1.8.3"
   },
   "devDependencies": {
-    "mocha": "^3.2.0"
+    "mocha": "^10.1.0"
   },
   "homepage": "https://github.com/IamProject/IamValidator",
   "license": "MIT",
@@ -27,6 +27,6 @@
     "validation"
   ],
   "engines": {
-    "node": ">= 6.0"
+    "node": ">= 14.0"
   }
 }
